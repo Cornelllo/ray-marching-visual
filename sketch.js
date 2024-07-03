@@ -1,3 +1,4 @@
+let debugTiming = false; // Flag to control debug timing output
 let polygons = []; // Array to store all polygon objects
 let movingPoint; // Variable to store the moving point object
 const RAY_COUNT = 30; // Number of rays emitted by the moving point
@@ -9,17 +10,32 @@ function setup() {
 }
 
 function draw() {
+    if (debugTiming) console.time('draw'); // Start measuring time for the draw function if debugging is enabled
+
   background(0); // Clear the canvas with a black background
 
+  if (debugTiming) console.time('drawPolygons');
   // Draw all polygons
   for (let polygon of polygons) {
     polygon.display(); // Display each polygon
   }
+  if (debugTiming) console.timeEnd('drawPolygons');
 
+  if (debugTiming) console.time('moveAndCastRays');
   // Move the point, check collisions, and cast rays
   movingPoint.move(polygons); // Move the point and check for collisions with polygons
   movingPoint.castRays(polygons); // Cast rays to detect intersections with polygons
   movingPoint.display(); // Display the moving point and its rays
+  if (debugTiming) console.timeEnd('moveAndCastRays');
+
+  if (debugTiming) console.timeEnd('draw'); // End measuring time for the draw function if
+}
+
+function keyPressed() {
+  if (key === 'd' || key === 'D') { // Check if the 'd' key is pressed
+    debugTiming = !debugTiming; // Toggle the debugTiming flag
+    console.log(`Debug timing is now ${debugTiming ? 'enabled' : 'disabled'}.`); // Log the new state
+  }
 }
 
 function mousePressed() {
@@ -37,6 +53,8 @@ class Polygon {
     this.sides = sides; // Set the number of sides of the polygon
     this.size = size; // Set the size of the polygon
     this.vertices = []; // Initialize an array to store the vertices of the polygon
+    this.distCache = new Map(); // Cache for distances
+    this.normalCache = new Map(); // Cache for normals
     this.generateVertices(); // Generate the vertices of the polygon
   }
 
@@ -65,6 +83,10 @@ class Polygon {
 
   // Get the shortest distance from a point to any of the polygon's edges
   getDistance(point) {
+    const key = `${point.x},${point.y}`; // Create a unique key for the point
+    if (this.distCache.has(key)) {
+      return this.distCache.get(key); // Return cached distance if available
+    }
     let minDistance = Infinity; // Initialize the minimum distance to infinity
     const len = this.vertices.length; // Cache the length of the vertices array
     for (let i = 0; i < len; i++) {
@@ -75,6 +97,7 @@ class Polygon {
         minDistance = distance; // Update the minimum distance if the current distance is smaller
       }
     }
+    this.distCache.set(key, minDistance); // Cache the calculated distance
     return minDistance; // Return the minimum distance
   }
 
@@ -89,6 +112,10 @@ class Polygon {
 
   // Get the normal vector of the closest edge to a point
   getClosestEdgeNormal(point) {
+    const key = `${point.x},${point.y}`; // Create a unique key for the point
+    if (this.normalCache.has(key)) {
+      return this.normalCache.get(key); // Return cached normal if available
+    }
     let minDistance = Infinity; // Initialize the minimum distance to infinity
     let closestEdgeNormal = createVector(0, 0); // Initialize the closest edge normal vector
     const len = this.vertices.length; // Cache the length of the vertices array
@@ -105,6 +132,7 @@ class Polygon {
         closestEdgeNormal = createVector(-(end.y - start.y), end.x - start.x).normalize(); // Calculate the normal vector of the closest edge
       }
     }
+    this.normalCache.set(key, closestEdgeNormal); // Cache the calculated normal
     return closestEdgeNormal; // Return the normal vector of the closest edge
   }
 }
