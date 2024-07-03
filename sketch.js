@@ -66,9 +66,10 @@ class Polygon {
   // Get the shortest distance from a point to any of the polygon's edges
   getDistance(point) {
     let minDistance = Infinity; // Initialize the minimum distance to infinity
-    for (let i = 0; i < this.vertices.length; i++) {
+    const len = this.vertices.length; // Cache the length of the vertices array
+    for (let i = 0; i < len; i++) {
       let start = this.vertices[i]; // Start vertex of the edge
-      let end = this.vertices[(i + 1) % this.vertices.length]; // End vertex of the edge
+      let end = this.vertices[(i + 1) % len]; // End vertex of the edge
       let distance = this.pointLineDistance(point, start, end); // Calculate the distance from the point to the edge
       if (distance < minDistance) {
         minDistance = distance; // Update the minimum distance if the current distance is smaller
@@ -82,7 +83,7 @@ class Polygon {
     let lineVector = p5.Vector.sub(v2, v1); // Vector representing the line segment
     let pointVector = p5.Vector.sub(pt, v1); // Vector from the start of the line to the point
     let t = constrain(pointVector.dot(lineVector) / lineVector.magSq(), 0, 1); // Calculate the projection of the point onto the line
-    let projection = p5.Vector.add(v1, lineVector.mult(t)); // Calculate the projection point
+    let projection = p5.Vector.add(v1, p5.Vector.mult(lineVector, t)); // Calculate the projection point
     return p5.Vector.dist(pt, projection); // Return the distance from the point to the projection
   }
 
@@ -90,13 +91,14 @@ class Polygon {
   getClosestEdgeNormal(point) {
     let minDistance = Infinity; // Initialize the minimum distance to infinity
     let closestEdgeNormal = createVector(0, 0); // Initialize the closest edge normal vector
-    for (let i = 0; i < this.vertices.length; i++) {
+    const len = this.vertices.length; // Cache the length of the vertices array
+    for (let i = 0; i < len; i++) {
       let start = this.vertices[i]; // Start vertex of the edge
-      let end = this.vertices[(i + 1) % this.vertices.length]; // End vertex of the edge
+      let end = this.vertices[(i + 1) % len]; // End vertex of the edge
       let lineVector = p5.Vector.sub(end, start); // Vector representing the line segment
       let pointVector = p5.Vector.sub(point, start); // Vector from the start of the line to the point
       let t = constrain(pointVector.dot(lineVector) / lineVector.magSq(), 0, 1); // Calculate the projection of the point onto the line
-      let projection = p5.Vector.add(start, lineVector.mult(t)); // Calculate the projection point
+      let projection = p5.Vector.add(start, p5.Vector.mult(lineVector, t)); // Calculate the projection point
       let distance = p5.Vector.dist(point, projection); // Calculate the distance from the point to the projection
       if (distance < minDistance) {
         minDistance = distance; // Update the minimum distance if the current distance is smaller
