@@ -21,9 +21,12 @@ function draw() {
   drawGrid(); // Draw the spatial grid
 
   if (debugTiming) console.time('drawPolygons');
-  // Draw all polygons
+  // Draw all polygons and their bounding boxes
   for (let polygon of polygons) {
     polygon.display(); // Display each polygon
+    if (debugTiming) {
+      drawBoundingBox(polygon.getBounds()); // Draw the bounding box of each polygon
+    }
   }
   if (debugTiming) console.timeEnd('drawPolygons');
 
@@ -35,7 +38,15 @@ function draw() {
     if (debugTiming) console.timeEnd('moveAndCastRays');
   }
 
-  movingPoint.display(); // Display the moving point and its rays
+  // Display the moving point and its rays
+  movingPoint.display();
+
+  // Highlight visited cells even when paused and in debug mode
+  if (debugTiming) {
+    for (let ray of movingPoint.rays) {
+      highlightVisitedCells(ray.visitedCells);
+    }
+  }
 
   if (debugTiming) console.timeEnd('draw'); // End measuring time for the draw function if debugging is enabled
 }
@@ -90,13 +101,22 @@ function addToGrid(polygon, grid) {
 
 // Draw the grid for visualization
 function drawGrid() {
-  stroke(40); // Set the stroke color for grid lines
-  for (let x = 0; x < width; x += GRID_SIZE) { // Loop through vertical grid lines
-    line(x, 0, x, height); // Draw vertical grid lines
+  if (debugTiming) {
+    stroke(40); // Set the stroke color for grid lines
+    for (let x = 0; x < width; x += GRID_SIZE) { // Loop through vertical grid lines
+      line(x, 0, x, height); // Draw vertical grid lines
+    }
+    for (let y = 0; y < height; y += GRID_SIZE) { // Loop through horizontal grid lines
+      line(0, y, width, y); // Draw horizontal grid lines
+    }
   }
-  for (let y = 0; y < height; y += GRID_SIZE) { // Loop through horizontal grid lines
-    line(0, y, width, y); // Draw horizontal grid lines
-  }
+}
+
+// Draw the bounding box of a polygon
+function drawBoundingBox(bounds) {
+  noFill(); // Disable filling
+  stroke(255, 0, 0); // Set the stroke color to red
+  rect(bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top); // Draw the bounding box
 }
 
 // Class to represent a polygon with a given position, number of sides, and size
@@ -251,11 +271,13 @@ class Ray {
     this.origin = origin; // Set the origin of the ray
     this.direction = p5.Vector.fromAngle(angle); // Set the direction of the ray based on the given angle
     this.steps = []; // Initialize an array to store the steps of the ray
+    this.visitedCells = []; // Initialize an array to store visited cells
   }
 
   // Perform ray marching to detect intersections with polygons
   march(grid) {
     this.steps = []; // Clear the steps array
+    this.visitedCells = []; // Clear the visited cells array
     let currentPos = this.origin.copy(); // Start from the origin of the ray
 
     const cols = grid.length; // Get the number of columns in the grid
@@ -271,6 +293,8 @@ class Ray {
       // Ensure the cell indices are within bounds
       col = constrain(col, 0, cols - 1);
       row = constrain(row, 0, rows - 1);
+
+      this.visitedCells.push({ col, row }); // Add the cell to the visited list
 
       // Check only polygons in the current grid cell
       let cellPolygons = grid[col][row];
@@ -304,11 +328,22 @@ class Ray {
       line(this.origin.x, this.origin.y, this.steps[this.steps.length - 1].x, this.steps[this.steps.length - 1].y); // Draw a line from the origin to the last step
     }
 
-    for (let i = 0; i < this.steps.length; i++) { // Loop through each step
-      let alpha = map(i, 0, this.steps.length - 1, 255, 50); // Map the alpha value based on the step index
-      fill(255, 0, 0, alpha); // Set the fill color with the calculated alpha
-      noStroke(); // Disable stroke
-      ellipse(this.steps[i].x, this.steps[i].y, 5, 5); // Draw an ellipse at each step
+    if (debugTiming) {
+      for (let i = 0; i < this.steps.length; i++) { // Loop through each step
+        let alpha = map(i, 0, this.steps.length - 1, 255, 50); // Map the alpha value based on the step index
+        fill(255, 0, 0, alpha); // Set the fill color with the calculated alpha
+        noStroke(); // Disable stroke
+        ellipse(this.steps[i].x, this.steps[i].y, 5, 5); // Draw an ellipse at each step
+      }
     }
+  }
+}
+
+// Function to highlight visited grid cells
+function highlightVisitedCells(cells) {
+  noFill();
+  stroke(0, 255, 0); // Set the stroke color to green
+  for (let cell of cells) {
+    rect(cell.col * GRID_SIZE, cell.row * GRID_SIZE, GRID_SIZE, GRID_SIZE);
   }
 }
