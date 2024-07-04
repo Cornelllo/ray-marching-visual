@@ -60,6 +60,9 @@ function keyPressed() {
     paused = !paused; // Toggle the paused flag
     console.log(`Paused is now ${paused ? 'enabled' : 'disabled'}.`); // Log the new state
   }
+  if (key === 'r' || key === 'R') { // Check if the 'r' key is pressed
+    clearPolygons(); // Remove all polygons from the canvas and grid
+  }
 }
 
 function mousePressed() {
@@ -95,6 +98,18 @@ function addToGrid(polygon, grid) {
   for (let col = minCol; col <= maxCol; col++) {
     for (let row = minRow; row <= maxRow; row++) {
       grid[col][row].push(polygon); // Add the polygon to each overlapping cell
+    }
+  }
+}
+
+// Clear all polygons from the canvas and the grid
+function clearPolygons() {
+  polygons = []; // Clear the polygons array
+
+  // Loop through the grid and clear each cell
+  for (let col = 0; col < grid.length; col++) {
+    for (let row = 0; row < grid[col].length; row++) {
+      grid[col][row] = []; // Clear the cell
     }
   }
 }
